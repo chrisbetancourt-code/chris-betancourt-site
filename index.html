@@ -338,6 +338,25 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--e
 .result .contact { display: grid; gap: 6px; }
 .result .contact b { font-weight: 600; word-break: break-word; }
 
+/* Booking form states */
+.req { color: var(--ember); margin-left: 2px; }
+.chip.radio span::before { border-radius: 50%; }
+.hp { position: absolute !important; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+[aria-invalid="true"] { border-color: #ff7a8a !important; }
+.field-err { color: #ff7a8a; font-size: 15px; margin-top: 6px; min-height: 0; }
+.field-err:empty { display: none; }
+.form-alert { border: 1px solid #ff7a8a; padding: 16px 18px; background: rgba(255, 122, 138, .08); display: grid; gap: 8px; }
+.form-alert[hidden] { display: none; }
+.form-alert p { margin: 0; }
+.form-alert a { text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
+.setup-note { border: 1px dashed #4a4541; padding: 12px 14px; color: var(--muted); font-size: 14px; }
+.setup-note[hidden] { display: none; }
+.btn[disabled] { opacity: .65; cursor: progress; transform: none; }
+.btn .spin { display: none; width: 14px; height: 14px; margin-right: 10px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -2px; animation: bkspin .7s linear infinite; }
+.btn[aria-busy="true"] .spin { display: inline-block; }
+@keyframes bkspin { to { transform: rotate(360deg); } }
+.result h3:focus { outline: none; }
+
 footer { border-top: 1px solid var(--line); padding-block: 40px; color: var(--muted); }
 footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; }
 
@@ -727,69 +746,121 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
       </aside>
       <div style="min-width:0;display:grid;gap:22px">
         <form id="bookingForm" novalidate>
-          <fieldset>
-            <legend>What would you like to book?</legend>
-            <div class="chips" id="roleChips">
-              <label class="chip"><input type="checkbox" name="role" value="Youth Pastor (speaking)"><span>Youth Pastor (speaking)</span></label>
-              <label class="chip"><input type="checkbox" name="role" value="Worship Leader"><span>Worship Leader</span></label>
-              <label class="chip"><input type="checkbox" name="role" value="Event Director"><span>Event Director</span></label>
-              <label class="chip"><input type="checkbox" name="role" value="Musician"><span>Musician</span></label>
+          <p class="setup-note" id="setupNote" hidden>Online booking isn't switched on yet. You can still reach Chris by email or Instagram at the bottom of this page.</p>
+
+          <!-- Honeypot: hidden from people, bots tend to fill it in -->
+          <div class="hp" aria-hidden="true">
+            <label for="company_site">Leave this field empty</label>
+            <input type="text" id="company_site" name="_gotcha" tabindex="-1" autocomplete="off">
+          </div>
+
+          <div class="row">
+            <div>
+              <label class="l" for="name">Full name <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id="name" name="name" autocomplete="name" required aria-describedby="name-err">
+              <p class="field-err" id="name-err"></p>
             </div>
-            <p class="err" id="roleErr" role="alert"></p>
+            <div>
+              <label class="l" for="email">Email address <span class="req" aria-hidden="true">*</span></label>
+              <input type="email" id="email" name="email" autocomplete="email" inputmode="email" required aria-describedby="email-err">
+              <p class="field-err" id="email-err"></p>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label class="l" for="phone">Phone number <span class="opt">(optional)</span></label>
+              <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="tel">
+            </div>
+            <div>
+              <label class="l" for="org">Church, organization or event name <span class="opt">(optional)</span></label>
+              <input type="text" id="org" name="organization" autocomplete="organization">
+            </div>
+          </div>
+
+          <fieldset aria-describedby="roleHint roleErr">
+            <legend>Type of booking <span class="req" aria-hidden="true">*</span></legend>
+            <p class="fine" id="roleHint">Choose all that apply.</p>
+            <div class="chips" id="roleChips">
+              <label class="chip"><input type="checkbox" name="role" value="Worship leading"><span>Worship leading</span></label>
+              <label class="chip"><input type="checkbox" name="role" value="Speaking / preaching"><span>Speaking / preaching</span></label>
+              <label class="chip"><input type="checkbox" name="role" value="Event direction"><span>Event direction</span></label>
+              <label class="chip"><input type="checkbox" name="role" value="Music / acoustic performance"><span>Music / acoustic performance</span></label>
+              <label class="chip"><input type="checkbox" name="role" value="Other ministry or creative services"><span>Other ministry or creative services</span></label>
+            </div>
+            <p class="field-err" id="roleErr"></p>
           </fieldset>
 
           <div class="row">
-            <div><label class="l" for="name">Your name</label><input type="text" id="name" name="name" autocomplete="name" required></div>
-            <div><label class="l" for="org">Church or organization <span class="opt">(optional)</span></label><input type="text" id="org" name="org" autocomplete="organization"></div>
-          </div>
-          <div class="row">
-            <div><label class="l" for="email">Email</label><input type="email" id="email" name="email" autocomplete="email" required></div>
-            <div><label class="l" for="phone">Phone <span class="opt">(optional)</span></label><input type="tel" id="phone" name="phone" autocomplete="tel"></div>
-          </div>
-          <div class="row">
-            <div><label class="l" for="eventName">Event name</label><input type="text" id="eventName" name="eventName" placeholder="Youth retreat, worship night…" required></div>
-            <div><label class="l" for="date">Event date</label><input type="date" id="date" name="date" required></div>
-          </div>
-          <div class="row">
-            <div><label class="l" for="location">City and venue</label><input type="text" id="location" name="location" required></div>
             <div>
-              <label class="l" for="size">Expected attendance</label>
-              <select id="size" name="size">
+              <label class="l" for="date">Event date <span class="opt">(optional)</span></label>
+              <input type="date" id="date" name="event_date">
+            </div>
+            <div>
+              <label class="l" for="location">Event location <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id="location" name="event_location" placeholder="City, state and venue" autocomplete="off" required aria-describedby="location-err">
+              <p class="field-err" id="location-err"></p>
+            </div>
+          </div>
+
+          <fieldset>
+            <legend>Event format <span class="req" aria-hidden="true">*</span></legend>
+            <div class="chips" id="formatChips">
+              <label class="chip radio"><input type="radio" name="format" value="In person" checked><span>In person</span></label>
+              <label class="chip radio"><input type="radio" name="format" value="Virtual"><span>Virtual</span></label>
+            </div>
+          </fieldset>
+
+          <div class="row">
+            <div>
+              <label class="l" for="budget">Estimated budget <span class="opt">(optional)</span></label>
+              <select id="budget" name="budget">
+                <option value="">Select</option>
+                <option>Under $500</option>
+                <option>$500 to $1,000</option>
+                <option>$1,000 to $2,500</option>
+                <option>$2,500 to $5,000</option>
+                <option>$5,000+</option>
+                <option>Not sure yet</option>
+              </select>
+            </div>
+            <div>
+              <label class="l" for="size">Expected attendance <span class="opt">(optional)</span></label>
+              <select id="size" name="attendance" aria-describedby="sizeNote">
                 <option value="">Select</option>
                 <option>Under 50</option><option>50 to 150</option><option>150 to 500</option><option>500 to 1,000</option><option>1,000+</option>
               </select>
-              <p class="fine">I ask for the size of your event only so I understand the technical needs (sound, stage, team). It never decides whether I say yes.</p>
             </div>
           </div>
+          <p class="fine" id="sizeNote" style="margin-top:-12px">I ask for the size of your event only so I understand the technical needs (sound, stage, team). It never decides whether I say yes.</p>
+
           <div class="row">
             <div>
               <label class="l" for="lang">Language <span class="opt">(optional)</span></label>
-              <select id="lang" name="lang"><option value="">Select</option><option>English</option><option>Español</option><option>Both, bilingual</option></select>
-              <p class="fine">I'm bilingual and glad to serve in English, Español, or both.</p>
+              <select id="lang" name="language" aria-describedby="langNote"><option value="">Select</option><option>English</option><option>Español</option><option>Both, bilingual</option></select>
+              <p class="fine" id="langNote">I'm bilingual and glad to serve in English, Español, or both.</p>
             </div>
           </div>
+
           <div>
-            <label class="l" for="details">Details <span class="opt">(optional)</span></label>
-            <textarea id="details" name="details" placeholder="Theme, schedule, how long you'd like me to speak or play, travel, honorarium, anything else I should know."></textarea>
+            <label class="l" for="details">Additional details about the event <span class="req" aria-hidden="true">*</span></label>
+            <textarea id="details" name="message" required aria-describedby="details-err" placeholder="Theme, schedule, how long you'd like me to speak or play, travel, anything else I should know."></textarea>
+            <p class="field-err" id="details-err"></p>
           </div>
+
+          <div class="form-alert" id="formAlert" role="alert" hidden></div>
+
           <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center">
-            <button class="btn" type="submit">Prepare my request</button>
-            <span class="fine">You'll review the request before sending it.</span>
+            <button class="btn" type="submit" id="submitBtn"><span class="spin" aria-hidden="true"></span><span id="submitLabel">Send booking inquiry</span></button>
+            <span class="fine">Fields marked * are required.</span>
           </div>
-          <p class="err" id="formErr" role="alert"></p>
         </form>
 
         <div class="result" id="result" hidden>
-          <h3>Your request is ready</h3>
-          <div class="contact" id="contactBlock"></div>
-          <label class="l" for="summary" style="margin:0">Booking request</label>
-          <textarea id="summary" readonly></textarea>
+          <h3 id="resultTitle" tabindex="-1">Inquiry sent</h3>
+          <p id="resultText" role="status"></p>
           <div class="actions">
-            <button class="btn" type="button" id="copyBtn">Copy request</button>
-            <a class="btn ghost" id="mailBtn" href="#" hidden target="_blank" rel="noopener">Open in email app</a>
-            <button class="btn ghost" type="button" id="editBtn">Edit request</button>
+            <button class="btn ghost" type="button" id="againBtn">Send another inquiry</button>
           </div>
-          <p class="fine" id="copyNote" role="status"></p>
         </div>
       </div>
     </div>
@@ -807,112 +878,200 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 /* Add Chris's real contact details here. Leave a value empty to hide it. */
 var CONTACT = { email: "chrisbetancourt56@gmail.com", instagram: "@chrisbetancourt" };
 
+/* BOOKING FORM ENDPOINT
+   Paste your Formspree endpoint between the quotes, e.g. "https://formspree.io/f/abcdwxyz".
+   Until then the form will NOT send anything and will tell visitors to use email or Instagram.
+   This URL is public by design. It is safe to keep in the page. Never put a secret API key here. */
+var FORMSPREE_ENDPOINT = "https://formspree.io/f/mppqradb";
+
 (function () {
   var form = document.getElementById('bookingForm');
   var result = document.getElementById('result');
-  var summary = document.getElementById('summary');
-  var roleErr = document.getElementById('roleErr');
-  var formErr = document.getElementById('formErr');
-  var copyNote = document.getElementById('copyNote');
-  var mailBtn = document.getElementById('mailBtn');
-  var contactBlock = document.getElementById('contactBlock');
+  var resultTitle = document.getElementById('resultTitle');
+  var resultText = document.getElementById('resultText');
+  var alertBox = document.getElementById('formAlert');
+  var setupNote = document.getElementById('setupNote');
+  var submitBtn = document.getElementById('submitBtn');
+  var submitLabel = document.getElementById('submitLabel');
   var dateInput = document.getElementById('date');
+  var sending = false;
+
+  var configured = /^https:\/\/formspree\.io\/f\/[A-Za-z0-9]+$/.test(FORMSPREE_ENDPOINT);
+  if (!configured) {
+    setupNote.hidden = false;
+    if (window.console) console.warn('Booking form: set FORMSPREE_ENDPOINT in index.html to enable submissions.');
+  }
 
   try {
     var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     dateInput.min = d.toISOString().slice(0, 10);
   } catch (e) {}
 
+  function $(id) { return document.getElementById(id); }
+  function val(id) { return $(id).value.trim(); }
   function roles() {
     return Array.prototype.slice.call(form.querySelectorAll('input[name="role"]:checked')).map(function (i) { return i.value; });
   }
 
-  /* "Book for ..." links pre-select the matching role. */
+  /* "Book for ..." links pre-select the matching type of booking. */
+  var roleMap = {
+    'Youth Pastor': 'Speaking / preaching',
+    'Worship Leader': 'Worship leading',
+    'Event Director': 'Event direction',
+    'Musician': 'Music / acoustic performance'
+  };
   Array.prototype.forEach.call(document.querySelectorAll('a[data-role]'), function (a) {
     a.addEventListener('click', function () {
-      var want = a.getAttribute('data-role');
-      Array.prototype.forEach.call(form.querySelectorAll('input[name="role"]'), function (i) {
-        i.checked = i.value.indexOf(want) === 0;
-      });
-      roleErr.textContent = '';
+      var want = roleMap[a.getAttribute('data-role')];
+      Array.prototype.forEach.call(form.querySelectorAll('input[name="role"]'), function (i) { i.checked = (i.value === want); });
+      setError('roleErr', '');
     });
   });
 
-  function prettyDate(v) {
-    if (!v) return '';
-    var p = v.split('-');
-    var dt = new Date(+p[0], +p[1] - 1, +p[2]);
-    return dt.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  /* ----- validation ----- */
+  var fields = [
+    { id: 'name',     err: 'name-err',     msg: 'Please enter your full name.' },
+    { id: 'email',    err: 'email-err',    msg: 'Please enter your email address.' },
+    { id: 'location', err: 'location-err', msg: 'Please tell me where the event will be.' },
+    { id: 'details',  err: 'details-err',  msg: 'Please share a few details about the event.' }
+  ];
+  var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  function setError(errId, msg, inputId) {
+    $(errId).textContent = msg;
+    if (inputId) {
+      if (msg) $(inputId).setAttribute('aria-invalid', 'true'); else $(inputId).removeAttribute('aria-invalid');
+    }
   }
 
+  function validate() {
+    var first = null;
+    fields.forEach(function (f) {
+      var v = val(f.id), m = '';
+      if (!v) m = f.msg;
+      else if (f.id === 'email' && !emailRe.test(v)) m = 'That email address looks incomplete. Example: name@example.com';
+      setError(f.err, m, f.id);
+      if (m && !first) first = $(f.id);
+    });
+    if (!roles().length) {
+      setError('roleErr', 'Choose at least one type of booking.');
+      if (!first) first = form.querySelector('input[name="role"]');
+    } else { setError('roleErr', ''); }
+    return first;
+  }
+
+  fields.forEach(function (f) {
+    $(f.id).addEventListener('input', function () { if ($(f.id).value.trim()) setError(f.err, '', f.id); });
+  });
+  form.addEventListener('change', function (e) {
+    if (e.target && e.target.name === 'role' && roles().length) setError('roleErr', '');
+  });
+
+  /* ----- messages ----- */
+  function contactLinks(parent) {
+    if (CONTACT.email) {
+      var m = document.createElement('a'); m.href = 'mailto:' + CONTACT.email; m.textContent = CONTACT.email; parent.appendChild(m);
+    }
+    if (CONTACT.email && CONTACT.instagram) parent.appendChild(document.createTextNode(' or on Instagram '));
+    if (CONTACT.instagram) {
+      var i = document.createElement('a'); i.href = 'https://instagram.com/' + CONTACT.instagram.replace('@', ''); i.target = '_blank'; i.rel = 'noopener'; i.textContent = CONTACT.instagram; parent.appendChild(i);
+    }
+  }
+  function showAlert(lead, tail) {
+    alertBox.textContent = '';
+    var p = document.createElement('p');
+    p.appendChild(document.createTextNode(lead + ' '));
+    contactLinks(p);
+    if (tail) p.appendChild(document.createTextNode(tail));
+    alertBox.appendChild(p);
+    alertBox.hidden = false;
+  }
+  function setBusy(on) {
+    sending = on;
+    submitBtn.disabled = on;
+    if (on) submitBtn.setAttribute('aria-busy', 'true'); else submitBtn.removeAttribute('aria-busy');
+    submitLabel.textContent = on ? 'Sending…' : 'Send booking inquiry';
+  }
+
+  /* ----- submit ----- */
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    roleErr.textContent = ''; formErr.textContent = '';
-    var picked = roles();
-    if (!picked.length) { roleErr.textContent = 'Choose at least one thing you would like to book.'; form.querySelector('input[name="role"]').focus(); return; }
-    var req = ['name', 'email', 'eventName', 'date', 'location'];
-    for (var i = 0; i < req.length; i++) {
-      var el = document.getElementById(req[i]);
-      if (!el.value.trim()) { formErr.textContent = 'Please fill in ' + el.previousElementSibling.textContent.trim().toLowerCase() + '.'; el.focus(); return; }
+    if (sending) return;                       /* blocks double clicks and double Enter */
+    alertBox.hidden = true;
+
+    var bad = validate();
+    if (bad) { bad.focus(); return; }
+
+    /* Honeypot: real visitors never see this field. Pretend success, send nothing. */
+    if (val('company_site')) { showSuccess(); return; }
+
+    if (!configured) {
+      showAlert('Online booking isn\'t switched on yet, so this was not sent. Your details are still here. For now, please reach Chris directly at', '.');
+      alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
     }
-    var em = document.getElementById('email');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value.trim())) { formErr.textContent = 'That email address looks incomplete.'; em.focus(); return; }
 
-    var v = function (id) { return document.getElementById(id).value.trim(); };
-    var lines = [
-      'Booking request for Chris Betancourt', '',
-      'Booking: ' + picked.join(', '),
-      'Event: ' + v('eventName'),
-      'Date: ' + prettyDate(v('date')),
-      'Location: ' + v('location'),
-      'Expected attendance: ' + (v('size') || 'Not specified'),
-      'Language: ' + (v('lang') || 'Not specified'), '',
-      'From: ' + v('name') + (v('org') ? ' (' + v('org') + ')' : ''),
-      'Email: ' + v('email')
-    ];
-    if (v('phone')) lines.push('Phone: ' + v('phone'));
-    if (v('details')) { lines.push('', 'Details:', v('details')); }
-    summary.value = lines.join('\n');
+    var fmt = form.querySelector('input[name="format"]:checked');
+    var data = new FormData();
+    data.append('_subject', 'Booking inquiry: ' + roles().join(', ') + ' (' + val('name') + ')');
+    data.append('name', val('name'));
+    data.append('email', val('email'));
+    data.append('phone', val('phone'));
+    data.append('organization', val('org'));
+    data.append('booking_type', roles().join(', '));
+    data.append('event_date', val('date'));
+    data.append('event_location', val('location'));
+    data.append('event_format', fmt ? fmt.value : '');
+    data.append('budget', val('budget') || 'Not specified');
+    data.append('attendance', val('size') || 'Not specified');
+    data.append('language', val('lang') || 'Not specified');
+    data.append('message', val('details'));
+    data.append('_gotcha', '');
 
-    contactBlock.textContent = '';
-    var hasContact = CONTACT.email || CONTACT.instagram;
-    var intro = document.createElement('p');
-    intro.className = 'fine';
-    if (hasContact) {
-      intro.textContent = CONTACT.email ? 'Send this request to Chris:' : 'Copy your request, then send it to Chris as a direct message on Instagram:';
-      contactBlock.appendChild(intro);
-      if (CONTACT.email) { var b = document.createElement('b'); b.textContent = CONTACT.email; contactBlock.appendChild(b); }
-      if (CONTACT.instagram) { var b2 = document.createElement('a'); b2.href = 'https://instagram.com/' + CONTACT.instagram.replace('@', ''); b2.target = '_blank'; b2.rel = 'noopener'; b2.textContent = 'Instagram ' + CONTACT.instagram; b2.style.cssText = 'display:block;font-weight:700;text-decoration:underline;text-underline-offset:3px;margin-top:6px;color:var(--bone)'; contactBlock.appendChild(b2); }
-    } else {
-      intro.textContent = 'Copy the request below and send it to Chris. His contact details will be listed here.';
-      contactBlock.appendChild(intro);
-    }
-    if (CONTACT.email) {
-      mailBtn.hidden = false;
-      mailBtn.href = 'mailto:' + CONTACT.email + '?subject=' + encodeURIComponent('Booking request: ' + v('eventName')) + '&body=' + encodeURIComponent(summary.value);
-    } else { mailBtn.hidden = true; }
+    setBusy(true);
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 20000);
 
-    copyNote.textContent = '';
+    fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      body: data,
+      headers: { 'Accept': 'application/json' },
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (body) { return { ok: res.ok, body: body }; });
+    }).then(function (r) {
+      clearTimeout(timer);
+      if (r.ok) { setBusy(false); showSuccess(); return; }
+      var detail = '';
+      if (r.body && r.body.errors && r.body.errors.length) {
+        detail = r.body.errors.map(function (x) { return x.message; }).join(' ');
+      }
+      throw new Error(detail || 'Request failed');
+    }).catch(function (err) {
+      clearTimeout(timer);
+      setBusy(false);
+      var timedOut = err && err.name === 'AbortError';
+      showAlert((timedOut ? 'That took too long.' : 'Something went wrong and your inquiry was not sent.') + ' Nothing you typed has been lost. Please try again, or reach Chris directly at', '.');
+      alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+
+  function showSuccess() {
+    var n = val('name').split(' ')[0];
+    resultText.textContent = 'Thank you' + (n ? ', ' + n : '') + '. Your booking inquiry has been received. Chris will review it and reply to ' + val('email') + '.';
     form.hidden = true;
     result.hidden = false;
     result.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+    resultTitle.focus({ preventScroll: true });
+  }
 
-  document.getElementById('editBtn').addEventListener('click', function () {
+  $('againBtn').addEventListener('click', function () {
+    form.reset();
+    Array.prototype.forEach.call(form.querySelectorAll('[aria-invalid]'), function (el) { el.removeAttribute('aria-invalid'); });
+    alertBox.hidden = true;
     result.hidden = true; form.hidden = false;
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-
-  document.getElementById('copyBtn').addEventListener('click', function () {
-    function fallback() {
-      summary.focus(); summary.select();
-      copyNote.textContent = 'Select all and copy the text above to send it.';
-    }
-    try {
-      navigator.clipboard.writeText(summary.value).then(function () {
-        copyNote.textContent = 'Copied. Paste it into an email or message to Chris.';
-      }, fallback);
-    } catch (e) { fallback(); }
+    $('name').focus({ preventScroll: true });
   });
 
   /* Videos start on tap and keep the native controls once started */
