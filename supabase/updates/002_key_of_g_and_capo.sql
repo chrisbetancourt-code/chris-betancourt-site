@@ -25,7 +25,7 @@ begin
     -- Capo note on the existing "Oh the Cross" video
     if b->>'type' = 'video' and b->>'url' like '%JXFh--1GmGM%' then
       b := jsonb_set(b, '{caption}', to_jsonb(
-        'Capo note: this "Oh the Cross" video is in Ab. Put a capo on fret 1 and play the G-position shapes you already know. ' || coalesce(b->>'caption','')));
+        'Capo note: this YouTube tutorial is in Ab, not G. Put a capo on fret 1 and play G-position shapes along with it. The Spotify recording and the chord chart are in G, so no capo for those. ' || coalesce(b->>'caption','')));
     end if;
 
     v_new := v_new || jsonb_build_array(b);
