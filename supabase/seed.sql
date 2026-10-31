@@ -1,5 +1,5 @@
 -- =====================================================================
--- Starter data: your first student and Lesson 2.
+-- Starter data: your first student and Lesson 1.
 -- Run AFTER 001_portal.sql. Safe to run once; it skips if Michael already exists.
 -- Everything here can be edited later from the Teacher Dashboard.
 -- =====================================================================
@@ -79,12 +79,12 @@ begin
       E'Practice single-note picking on the high E string. Use alternate picking, beginning with a downstroke.\nFocus on:\n- Clean notes\n- Controlled picking\n- Relaxed fretting-hand movement\n- Consistent timing\nIf you are comfortable, repeat the exercise on the B string.',
       'e|---0---1---3---1---0---|', 5, null, 'Daily, Oct 31 to Nov 5', date '2026-11-05', '[]', true),
     (v_lesson, 5, 'Learn the Song',
-      E'Song: "Oh the Cross" by UPPERROOM.\n1. Listen to the recording.\n2. Identify the major song sections.\n3. Listen for the rhythm guitar and lead guitar parts.\n4. Pay attention to how the guitar contributes to the arrangement.\n5. Begin practicing the song''s rhythm part using the chord chart.\nYou do not need to learn the whole song before Lesson 2. We will go through the key sections together.\nThe lead guitar tutorial may be advanced for now. Use it to get familiar with the lead phrases rather than trying to master the full arrangement.',
+      E'Song: "Oh the Cross" by UPPERROOM.\n1. Listen to the recording.\n2. Identify the major song sections.\n3. Listen for the rhythm guitar and lead guitar parts.\n4. Pay attention to how the guitar contributes to the arrangement.\n5. Begin practicing the song''s rhythm part using the chord chart.\nYou do not need to learn the whole song before our next lesson. We will go through the key sections together.\nThe lead guitar tutorial may be advanced for now. Use it to get familiar with the lead phrases rather than trying to master the full arrangement.',
       null, null, null, 'Daily, Oct 31 to Nov 5', date '2026-11-05',
       '[{"label":"Lead guitar tutorial (YouTube)","url":"https://youtu.be/JXFh--1GmGM"}]', false);
 
   insert into public.assignments (student_id, lesson_id, lesson_number, lesson_date, homework_start, homework_due, status, published_at)
-  values (v_student, v_lesson, 2, date '2026-11-06', date '2026-10-31', date '2026-11-05', 'published', now())
+  values (v_student, v_lesson, 1, date '2026-11-06', date '2026-10-31', date '2026-11-05', 'published', now())
   returning id into v_assign;
 
   insert into public.teacher_notes (student_id, assignment_id, body) values

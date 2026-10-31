@@ -6,7 +6,7 @@ The website code is already in this repo. These steps connect it to your Supabas
 ## 1. Create the database (Supabase)
 1. Supabase dashboard -> **SQL Editor** -> **New query**.
 2. Open `supabase/migrations/001_portal.sql`, copy everything, paste, press **Run**. It should say "Success".
-3. New query again. Copy everything from `supabase/seed.sql`, paste, **Run**. This adds Michael Delgado and Lesson 2.
+3. New query again. Copy everything from `supabase/seed.sql`, paste, **Run**. This adds Michael Delgado and Lesson 1.
 
 ## 2. Lock down sign-ups and set the links (Supabase)
 1. **Authentication -> Sign In / Providers -> Email**: turn **off** "Allow new users to sign up". Students join only by your invitation. Set the minimum password length to 8.

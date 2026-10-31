@@ -1,4 +1,4 @@
--- Lesson 2 update: Key of G video, full-voicing chord chart, capo note for "Oh the Cross".
+-- Lesson 1 update: Key of G video, full-voicing chord chart, capo note for "Oh the Cross".
 -- Safe to run once in the Supabase SQL Editor. It skips itself if already applied.
 do $$
 declare
