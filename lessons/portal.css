@@ -26,7 +26,10 @@ h1, h2, h3, h4 { margin: 0; overflow-wrap: break-word; text-wrap: balance; }
 .fine { color: var(--muted); font-size: 14px; }
 .small { font-size: 14px; }
 .block { display: block; }
-.pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.pre { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.rich { display: grid; gap: 12px; max-width: 68ch; }
+.rich-list { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; }
+.rich-list li { padding-left: 4px; }
 
 /* nav */
 .nav { position: sticky; top: 0; z-index: 40; background: rgba(6,6,6,.88); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
@@ -207,3 +210,35 @@ table.agenda { width: 100%; border-collapse: collapse; }
   input.short { max-width: none; }
   .page-head { align-items: stretch; }
 }
+
+/* Phones: fewer boxes inside boxes, more room for the words */
+@media (max-width: 600px) {
+  .wrap { padding-inline: 12px; }
+  .page { gap: 24px; padding-block: 20px 72px; }
+  .card { padding: 24px 16px; gap: 20px; }
+  .card-h { font-size: 19px; }
+  .hero-card .page-h { font-size: 28px; line-height: 1.05; letter-spacing: -.01em; }
+  .page-h { letter-spacing: -.01em; }
+  .ex-list { gap: 0; }
+  .ex { border: 0; border-top: 1px solid var(--line); background: transparent; padding: 28px 0; gap: 18px; }
+  .ex:first-child { border-top: 0; padding-top: 12px; }
+  .ex.is-done { border-top-color: #2f5a43; }
+  .ex-head { gap: 12px; }
+  .ex-t { font-size: 19px; margin-bottom: 10px; }
+  .ex-meta { font-size: 15px; line-height: 1.5; }
+  .vids { padding-top: 18px; gap: 16px; }
+  .sub { background: transparent; border: 0; border-left: 2px solid var(--line); padding: 4px 0 4px 14px; gap: 14px; }
+  .chips-row { gap: 10px; }
+  .row-actions { gap: 14px; }
+  .objective { padding-left: 12px; }
+  .checks { gap: 8px; }
+  .agenda th, .agenda td { padding: 14px 6px; }
+  .agenda td:first-child, .agenda th:first-child { width: 78px; }
+  .row-link { padding: 16px 2px; gap: 10px; }
+  .row-edit { padding: 14px; }
+  pre.tab { font-size: 14px; padding: 14px 12px; }
+  .blocks { gap: 18px; }
+  .upl-msg, .fine { line-height: 1.55; }
+}
+
+.hero-card > div { display: grid; gap: 10px; }

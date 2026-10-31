@@ -123,6 +123,23 @@ function renderBlock(b) {
   }
 }
 
+/* Plain text with line breaks -> paragraphs and real lists (1. 2. 3.  or  - item). */
+export function renderText(text) {
+  const out = h('div', { class: 'rich' });
+  let list = null, kind = null;
+  for (const raw of String(text || '').split('\n')) {
+    const line = raw.trim();
+    if (!line) { list = null; continue; }
+    const num = line.match(/^\d+[.)]\s+(.*)$/), bul = line.match(/^[-\u2022*]\s+(.*)$/);
+    const k = num ? 'ol' : bul ? 'ul' : null;
+    if (k) {
+      if (!list || kind !== k) { list = h(k, { class: 'rich-list' }); kind = k; out.append(list); }
+      list.append(h('li', {}, (num || bul)[1]));
+    } else { list = null; out.append(h('p', {}, line)); }
+  }
+  return out;
+}
+
 /* ---------- feedback to the person using the page ---------- */
 export function toast(msg, kind) {
   const box = document.getElementById('toasts');

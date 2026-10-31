@@ -1,7 +1,7 @@
 import { db, enc, uploadVideo, signedVideoUrl, deleteVideoFile } from './api.js';
 import { MAX_VIDEO_MB } from './config.js';
 import { ctx, isTeacher, go } from './ctx.js';
-import { h, renderBlocks, chip, statusChip, toast, fmtDay, fmtRange, fmtWhen, fmtBytes, fmtClock, parseClock, ext, empty, field } from './ui.js';
+import { h, renderText, renderBlocks, chip, statusChip, toast, fmtDay, fmtRange, fmtWhen, fmtBytes, fmtClock, parseClock, ext, empty, field } from './ui.js';
 
 const OK_EXT = { mp4: 'video/mp4', mov: 'video/quicktime', m4v: 'video/x-m4v', webm: 'video/webm', '3gp': 'video/3gpp' };
 const OK_TYPES = Object.values(OK_EXT);
@@ -90,7 +90,7 @@ export async function lessonPage(sid, aid, focusExercise) {
           h('p', { class: 'chips-row' }, isDone ? chip('Completed', 'good') : chip('Not completed yet'),
             e.requires_video ? chip('Video requested', 'warm') : null))),
       meta.length ? h('p', { class: 'muted ex-meta' }, meta.join(' · ')) : null,
-      e.instructions ? h('p', { class: 'pre' }, e.instructions) : null,
+      e.instructions ? renderText(e.instructions) : null,
       e.tab ? h('figure', { class: 'tabfig' }, h('pre', { class: 'tab', tabindex: '0', 'aria-label': 'Guitar tablature' }, e.tab)) : null,
       (e.reference_links || []).length ? h('p', { class: 'refs' }, h('span', { class: 'mono' }, 'Reference '), (e.reference_links || []).map((l) => ext(l.url, l.label || l.url))) : null,
       !teacher ? h('div', { class: 'row-actions' }, toggle) : null,
