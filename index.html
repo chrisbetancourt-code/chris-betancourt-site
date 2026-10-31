@@ -83,7 +83,32 @@ h1, h2, h3 { margin: 0; text-wrap: balance; overflow-wrap: break-word; }
 .nav ul a { text-decoration: none; color: var(--muted); font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
 .nav ul a:hover { color: var(--bone); }
 .nav .btn { padding: 12px 18px; font-size: 14px; margin-left: 0; }
-@media (max-width: 800px) { .nav ul { display: none; } .nav .btn { margin-left: auto; } }
+ 
+/* Menu button + dropdown (phones and small tablets) */
+.menu-btn { display: none; width: 44px; height: 44px; flex: none; position: relative; background: transparent; border: 1px solid #4a4541; color: var(--bone); cursor: pointer; padding: 0; border-radius: 0; }
+.menu-btn:hover { border-color: var(--bone); }
+.menu-btn span { position: absolute; left: 12px; right: 12px; height: 2px; background: currentColor; transition: transform .2s ease, opacity .2s ease; }
+.menu-btn span:nth-child(1) { top: 14px; }
+.menu-btn span:nth-child(2) { top: 21px; }
+.menu-btn span:nth-child(3) { top: 28px; }
+.menu-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.menu-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.menu-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.menu-panel { position: absolute; left: 0; right: 0; top: 100%; background: rgba(6, 6, 6, .98); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); max-height: calc(100vh - 70px); max-height: calc(100dvh - 70px); overflow-y: auto; overscroll-behavior: contain; }
+.menu-panel[hidden] { display: none; }
+.menu-panel .wrap { display: grid; padding-block: 4px 22px; }
+.menu-panel a { display: flex; align-items: baseline; gap: 16px; padding: 15px 0; border-bottom: 1px solid var(--line); text-decoration: none; font: 800 22px/1.1 var(--display); text-transform: uppercase; letter-spacing: -.01em; }
+.menu-panel a .n { font: 500 12px/1 var(--mono); letter-spacing: .14em; color: var(--ember); min-width: 2.2ch; }
+.menu-panel a:hover, .menu-panel a:focus-visible { color: var(--ember); }
+.menu-panel .more { display: flex; flex-wrap: wrap; gap: 10px 24px; padding-top: 18px; }
+.menu-panel .more a { padding: 6px 0; border: 0; font: 500 12px/1.2 var(--mono); letter-spacing: .14em; color: var(--muted); }
+@media (max-width: 800px) {
+  .nav ul { display: none; }
+  .nav .btn { margin-left: auto; }
+  .menu-btn { display: block; }
+  .nav .wrap { gap: 12px; }
+}
+@media (max-width: 360px) { .brand { font-size: 13px; } .nav .btn { padding-inline: 14px; } }
 
 /* Hero */
 .hero { position: relative; isolation: isolate; min-height: min(94svh, 940px); display: grid; align-items: end; overflow: hidden; }
@@ -445,7 +470,25 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
       <li><a href="#how">How it works</a></li>
     </ul>
     <a class="btn" href="#book">Book</a>
+    <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="menuPanel" aria-label="Open menu"><span></span><span></span><span></span></button>
   </div>
+  <nav class="menu-panel" id="menuPanel" aria-label="Sections" hidden>
+    <div class="wrap">
+      <a href="#what"><span class="n">01</span>What I do</a>
+      <a href="#watch"><span class="n">02</span>Watch</a>
+      <a href="#gallery"><span class="n">03</span>Gallery</a>
+      <a href="#about"><span class="n">04</span>About</a>
+      <a href="#story"><span class="n">05</span>My story</a>
+      <a href="#testimonials"><span class="n">06</span>Testimonies</a>
+      <a href="#how"><span class="n">07</span>How it works</a>
+      <a href="#lessons"><span class="n">08</span>Guitar lessons</a>
+      <a href="#book"><span class="n">09</span>Book Chris</a>
+      <div class="more">
+        <a href="/lessons/">Student sign-in →</a>
+        <a href="https://instagram.com/chrisbetancourt" target="_blank" rel="noopener">@chrisbetancourt</a>
+      </div>
+    </div>
+  </nav>
 </header>
 
 <main id="top">
@@ -1288,6 +1331,28 @@ var FORMSPREE_ENDPOINT = "https://formspree.io/f/mppqradb";
     window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
     window.addEventListener('resize', update);
     update();
+  }
+})();
+</script>
+
+<script>
+/* Section menu: opens from the button, closes on link tap, outside tap or Escape */
+(function () {
+  var btn = document.getElementById('menuBtn'), panel = document.getElementById('menuPanel');
+  if (!btn || !panel) return;
+  function set(open) {
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    panel.hidden = !open;
+  }
+  btn.addEventListener('click', function () { set(btn.getAttribute('aria-expanded') !== 'true'); });
+  panel.addEventListener('click', function (e) { if (e.target.closest('a')) set(false); });
+  document.addEventListener('click', function (e) { if (!panel.hidden && !e.target.closest('.nav')) set(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) { set(false); btn.focus(); } });
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(min-width: 801px)');
+    var close = function (e) { if (e.matches) set(false); };
+    if (mq.addEventListener) mq.addEventListener('change', close); else if (mq.addListener) mq.addListener(close);
   }
 })();
 </script>
