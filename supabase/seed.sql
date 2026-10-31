@@ -31,6 +31,8 @@ begin
       jsonb_build_object('type','paragraph','text','You already know four chords: G major, E minor, D major and C major. This lesson builds on them so you can play rhythm or lead electric guitar in a modern worship setting.'),
       jsonb_build_object('type','chords','caption','Your four chords','text',
         E'  G           Em          D           C\ne|--3--     e|--0--     e|--2--     e|--0--\nB|--0--     B|--0--     B|--3--     B|--1--\nG|--0--     G|--0--     G|--2--     G|--0--\nD|--0--     D|--2--     D|--0--     D|--2--\nA|--2--     A|--2--     A|-----     A|--3--\nE|--3--     E|--0--     E|-----     E|-----'),
+      jsonb_build_object('type','chords','caption','Full voicings from the Key of G video (use these alongside your four chords)','text',
+        E'  G           C           Em\ne|--3--     e|--3--     e|--3--\nB|--3--     B|--3--     B|--3--\nG|--0--     G|--0--     G|--0--\nD|--0--     D|--2--     D|--2--\nA|--2--     A|--3--     A|--2--\nE|--3--     E|--x--     E|--0--'),
       jsonb_build_object('type','heading','text','What we are working on'),
       jsonb_build_object('type','bullets','items',jsonb_build_array(
         'Cleaner chord shapes and smoother transitions',
@@ -44,7 +46,8 @@ begin
         'Keep playing through mistakes. Do not stop and restart.',
         'We add one new idea at a time.',
         'The goal: learn songs on your own and confidently play rhythm or lead on a worship team.')),
-      jsonb_build_object('type','video','url','https://youtu.be/JXFh--1GmGM','caption','Lead guitar tutorial for "Oh the Cross". It may be advanced for now. Use it to get familiar with the lead phrases, not to master the whole arrangement.')
+      jsonb_build_object('type','video','url','https://youtu.be/JXFh--1GmGM','caption','Capo note: this "Oh the Cross" video is in Ab. Put a capo on fret 1 and play the G-position shapes you already know. Lead guitar tutorial for "Oh the Cross". It may be advanced for now. Use it to get familiar with the lead phrases, not to master the whole arrangement.'),
+      jsonb_build_object('type','video','url','https://youtu.be/Aq3NqBgcKXU','caption','Beginner guide to playing in the key of G. It covers G, C and Em, the same chords from your chart. Watch it for deeper, step-by-step instruction.')
     ),
     jsonb_build_array(
       jsonb_build_object('minutes',10,'activity','Review chord shapes and transitions'),
