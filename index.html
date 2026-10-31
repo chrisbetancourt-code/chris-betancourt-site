@@ -292,6 +292,17 @@ h1, h2, h3 { margin: 0; text-wrap: balance; overflow-wrap: break-word; }
 .steps p { color: var(--muted); }
 @media (max-width: 760px) { .steps { grid-template-columns: minmax(0, 1fr); } }
 
+/* Guitar lessons band */
+.lessons-band { border-top: 1px solid var(--line); background: linear-gradient(180deg, var(--black), var(--coal)); }
+.lessons-band .wrap { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(24px, 5vw, 72px); align-items: center; padding-block: clamp(48px, 8vw, 104px); }
+.lessons-band h2 { font-size: clamp(30px, 4.2vw, 60px); }
+.lessons-band p.lead { color: var(--muted); max-width: 52ch; margin-top: 16px; }
+.lessons-band .text { display: grid; gap: 4px; }
+.lessons-band .acts { display: grid; gap: 12px; justify-items: stretch; }
+.lessons-band .acts .btn { width: 100%; padding: 20px 26px; font-size: 16px; }
+.lessons-band .acts .fine { color: var(--muted); font-size: 14px; text-align: center; }
+@media (max-width: 800px) { .lessons-band .wrap { grid-template-columns: minmax(0, 1fr); } }
+
 /* Booking */
 .book { background: var(--coal); border-top: 1px solid var(--line); }
 .book .wrap { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: clamp(28px, 6vw, 96px); align-items: start; padding-block: clamp(56px, 9vw, 120px); }
@@ -513,6 +524,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
         <p class="copy">Solo acoustic sets, full band arrangements or electric guitar to support your team. Prepared, reliable and easy to plug into your service.</p>
         <ul class="tags"><li>Acoustic sets</li><li>Band support</li><li>Services</li><li>Special events</li></ul>
         <a class="go" href="#book" data-role="Musician">Book a musician →</a>
+        <a class="go" href="#lessons">Take guitar lessons →</a>
       </div>
     </article>
   </section>
@@ -737,6 +749,21 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
     </div>
   </section>
 
+  <section id="lessons" class="lessons-band">
+    <div class="wrap">
+      <div class="text">
+        <p class="mono ember">Guitar lessons</p>
+        <h2 class="display">Learn guitar with me</h2>
+        <p class="lead">Private lessons for rhythm and lead guitar in a worship setting. Every student gets their own lesson plans, weekly homework and video feedback.</p>
+      </div>
+      <div class="acts">
+        <a class="btn" href="/lessons/">Student sign-in →</a>
+        <a class="btn ghost" href="#book" data-role="Guitar lessons">Ask about lessons</a>
+        <p class="fine">Lessons are by invitation. Ask and I'll get you set up.</p>
+      </div>
+    </div>
+  </section>
+
   <section id="book" class="book">
     <div class="wrap">
       <aside class="book-aside">
@@ -919,7 +946,8 @@ var FORMSPREE_ENDPOINT = "https://formspree.io/f/mppqradb";
     'Youth Pastor': 'Speaking / preaching',
     'Worship Leader': 'Worship leading',
     'Event Director': 'Event direction',
-    'Musician': 'Music / acoustic performance'
+    'Musician': 'Music / acoustic performance',
+    'Guitar lessons': 'Other ministry or creative services'
   };
   Array.prototype.forEach.call(document.querySelectorAll('a[data-role]'), function (a) {
     a.addEventListener('click', function () {
