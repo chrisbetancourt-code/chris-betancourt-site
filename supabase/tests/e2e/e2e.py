@@ -8,6 +8,12 @@ SHOTS = sys.argv[1] if len(sys.argv) > 1 else '/tmp'
 results = []
 def psql(sql):
     return subprocess.check_output(['psql','-h','/tmp','-p','54329','-U','postgres','-d','portal_e2e','-qAt','-c',sql], text=True).strip()
+def open_ex(pg, n):
+    """Exercises are collapsible now; open exercise n (0-based) if it is closed."""
+    ex = pg.locator('.ex').nth(n)
+    if not ex.evaluate('e => e.open'):
+        ex.locator('summary').first.click()
+    return ex
 def step(name):
     def deco(fn):
         try: fn(); results.append((True, name)); print('PASS', name)
@@ -73,12 +79,45 @@ with sync_playwright() as p:
         expect(t.locator('h1')).to_contain_text('Building the Foundation')
         expect(t.locator('.ex')).to_have_count(5)
         expect(t.locator('pre.tab').filter(has_text='e|---0---1---3---1---0---|')).to_have_count(1)
-        expect(t.locator('pre.tab').filter(has_text='G           Em')).to_have_count(1)
+        expect(t.locator('figure.tabfig').filter(has_text='Your four chords').locator('pre.tab').filter(has_text='G           Em')).to_have_count(1)
         expect(t.locator('.agenda tfoot')).to_contain_text('60 min')
         expect(t.locator('.checks li')).to_have_count(4)
         expect(t.locator('iframe[src*="youtube-nocookie.com/embed/JXFh--1GmGM"]')).to_have_count(1)
         expect(t.locator('.teacher-tools')).to_contain_text('TO VERIFY')
         t.screenshot(path=SHOTS + '/teacher-lesson.png', full_page=True)
+
+    @step('Lesson sections are collapsible: open/close with a click and with the keyboard')
+    def _():
+        grp = t.locator('details.grp', has=t.locator('summary', has_text='What we are working on'))
+        assert not grp.evaluate('e => e.open')
+        expect(grp.locator('li').first).not_to_be_visible()
+        grp.locator('summary').click(); assert grp.evaluate('e => e.open'); expect(grp.locator('li').first).to_be_visible()
+        grp.locator('summary').focus(); t.keyboard.press('Enter'); assert not grp.evaluate('e => e.open')
+        agenda = t.locator('details.sec', has=t.locator('summary', has_text='Lesson agenda'))
+        assert agenda.evaluate('e => e.open'); agenda.locator('summary').click()
+        expect(agenda.locator('table')).not_to_be_visible(); agenda.locator('summary').click()
+        expect(agenda.locator('table')).to_be_visible()
+
+    @step('Sections menu: opens, lists every section, jumps to and opens a collapsed one, closes on Escape / outside click')
+    def _():
+        btn = t.locator('.secnav-btn'); panel = t.locator('#secnav')
+        expect(btn).to_be_visible(); expect(panel).to_be_hidden()
+        btn.click(); expect(panel).to_be_visible(); expect(btn).to_have_attribute('aria-expanded', 'true')
+        labels = panel.locator('.secnav-item').all_inner_texts()
+        for want in ['Top of lesson', 'Lesson', 'Lesson agenda', 'Homework', 'Teacher tools', '5. Learn the Song']:
+            assert any(l.strip().lower() == want.lower() for l in labels), (want, labels)
+        ex5 = t.locator('#secnav .secnav-item', has_text='5. Learn the Song'); ex5.click()
+        expect(panel).to_be_hidden()
+        card = t.locator('.ex').nth(4); assert card.evaluate('e => e.open')
+        top = card.evaluate('e => e.getBoundingClientRect().top'); assert -2 <= top < 200, top
+        btn.click(); t.keyboard.press('Escape'); expect(panel).to_be_hidden()
+        btn.click(); expect(panel).to_be_visible(); t.mouse.click(5, 300); expect(panel).to_be_hidden()
+        btn.click(); t.locator('#secnav .secnav-tools >> text=Close all').click()
+        assert t.locator('details.sec[open]').count() == 0
+        t.locator('.secnav-tools >> text=Open all').click()
+        assert t.locator('details.sec:not([open])').count() == 0
+        t.keyboard.press('Escape')
+        t.screenshot(path=SHOTS + '/lesson-menu-desktop.png')
 
     @step('Teacher can tick an objective and mark exercise state is visible')
     def _():
@@ -154,6 +193,7 @@ with sync_playwright() as p:
         expect(s.locator('.ex')).to_have_count(5)
         ex = s.locator('.ex').nth(0)
         ex.locator('text=Mark as completed').click(); s.wait_for_timeout(600)
+        assert s.locator('.ex').nth(0).evaluate('e => e.open'), 'exercise snapped shut after marking complete'
         expect(s.locator('.ex').nth(0)).to_contain_text('Completed')
         assert psql("select count(*) from exercise_completions where student_id='%s'" % MID) == '1'
         s.locator('.ex').nth(0).locator('text=tap to undo').click(); s.wait_for_timeout(600)
@@ -197,7 +237,7 @@ with sync_playwright() as p:
     def _():
         s.wait_for_timeout(600)
         assert s.locator('.player video').count() == 0
-        s.locator('.ex').nth(2).locator('text=Watch video').click()
+        open_ex(s, 2); s.locator('.ex').nth(2).locator('text=Watch video').click()
         expect(s.locator('.ex').nth(2).locator('video')).to_have_attribute('src', re.compile(r'/storage/v1/object/sign/submissions/.+token='))
 
     # ---------------- review & feedback ----------------
@@ -205,7 +245,7 @@ with sync_playwright() as p:
     def _():
         t.goto(SITE + '/lessons/#/'); expect(t.locator('.stat').nth(2)).to_contain_text('2')
         t.goto(SITE + '/lessons/#/s/%s/l/%s' % (MID, M_ASG))
-        ex3 = t.locator('.ex').nth(2)
+        ex3 = open_ex(t, 2)
         ex3.locator('text=Mark in review').click(); t.wait_for_timeout(600)
         expect(t.locator('.ex').nth(2).locator('.sub')).to_contain_text('In review')
         f = t.locator('.ex').nth(2).locator('.fbform')
@@ -217,6 +257,7 @@ with sync_playwright() as p:
     @step('Student sees the feedback, suggestions and "Feedback ready" status')
     def _():
         s.reload(); s.wait_for_timeout(800)
+        open_ex(s, 2)
         sub = s.locator('.ex').nth(2).locator('.sub')
         expect(sub).to_contain_text('Nice steady timing!'); expect(sub).to_contain_text('Relax your picking wrist.'); expect(sub).to_contain_text('Feedback ready')
         expect(sub.locator('.fbform')).to_have_count(0)
@@ -226,6 +267,7 @@ with sync_playwright() as p:
     @step('Student cannot delete a video once it has been reviewed')
     def _():
         s.goto(SITE + '/lessons/#/s/%s/l/%s' % (MID, M_ASG)); s.wait_for_timeout(800)
+        open_ex(s, 1); open_ex(s, 2)
         expect(s.locator('.ex').nth(2).locator('text=Delete this video')).to_have_count(0)
         expect(s.locator('.ex').nth(1).locator('text=Delete this video')).to_have_count(1)
 
@@ -344,6 +386,13 @@ with sync_playwright() as p:
         pg.goto(SITE + '/lessons/#/s/%s/l/%s' % (MID, M_ASG)); pg.wait_for_timeout(900)
         pg.screenshot(path=SHOTS + '/m-lesson.png', full_page=True)
         assert not pg.evaluate('document.documentElement.scrollWidth > innerWidth')
+        pg.locator('.secnav-btn').click(); pan = pg.locator('#secnav'); expect(pan).to_be_visible()
+        bb = pan.bounding_box(); assert bb['x'] >= 0 and bb['x'] + bb['width'] <= 390 and bb['y'] >= 0 and bb['y'] + bb['height'] <= 844, bb
+        bt = pg.locator('.secnav-btn').bounding_box(); assert bt['height'] >= 44, bt
+        pg.screenshot(path=SHOTS + '/m-lesson-menu.png')
+        pg.locator('#secnav .secnav-item', has_text='Homework').click(); pg.wait_for_timeout(300)
+        assert pg.locator('#homework').evaluate('e => e.open')
+        assert not pg.evaluate('document.documentElement.scrollWidth > innerWidth')
         c.close()
         c = new_ctx(390, 844); pg = page_of(c); login(pg, 'chris@test.local'); pg.wait_for_timeout(800)
         pg.screenshot(path=SHOTS + '/m-teacher.png', full_page=True)
@@ -358,7 +407,8 @@ with sync_playwright() as p:
         c = new_ctx(); pg = page_of(c); before = len(errors)
         pg.goto(SITE + '/index.html'); pg.wait_for_timeout(1200)
         expect(pg.locator('#bookingForm')).to_have_count(1)
-        expect(pg.locator('header.nav a[href="/lessons/"]')).to_have_count(1)
+        expect(pg.locator('header.nav ul a[href="/lessons/"]')).to_have_count(1)
+        expect(pg.locator('#menuPanel a[href="/lessons/"]')).to_have_count(1)
         expect(pg.locator('footer a[href="/lessons/"]')).to_have_count(1)
         assert len(errors) == before, errors[before:]
         c.close()

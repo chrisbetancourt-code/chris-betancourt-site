@@ -7,6 +7,11 @@ const OK_EXT = { mp4: 'video/mp4', mov: 'video/quicktime', m4v: 'video/x-m4v', w
 const OK_TYPES = Object.values(OK_EXT);
 const inList = (ids) => '(' + ids.map(enc).join(',') + ')';
 
+// Remembers which sections are open while you use the page (kept in memory only), so marking
+// something complete or sending feedback does not snap everything shut again.
+const openState = new Map();
+const isOpen = (k, dflt) => { if (!openState.has(k)) openState.set(k, !!dflt); return openState.get(k); };
+
 export async function lessonPage(sid, aid, focusExercise) {
   const [asg] = await db.select('assignments', `select=*,lessons(*),students(id,full_name)&id=eq.${enc(aid)}`);
   // The ID in the address bar proves nothing. The database already filtered by who you are;
@@ -33,6 +38,33 @@ export async function lessonPage(sid, aid, focusExercise) {
   const fbBySub = {}; fbs.forEach((f) => (fbBySub[f.submission_id] = fbBySub[f.submission_id] || []).push(f));
   const subsFor = (exId) => subs.filter((s) => (s.exercise_id || null) === exId);
 
+  /* ----- collapsible sections + the section menu ----- */
+  const sections = []; // { id, title, depth, el }
+  const key = (id) => aid + '|' + id;
+  function fold(id, cls, summary, body, { open = true, depth = 0, title, domId, menu = true } = {}) {
+    const el = h('details', { class: cls + ' sec', id: domId || 'sec-' + id, open: isOpen(key(id), open) },
+      h('summary', { class: 'sec-sum' }, summary), h('div', { class: 'sec-body' }, body));
+    el.addEventListener('toggle', () => openState.set(key(id), el.open));
+    if (menu) sections.push({ id, title: title || id, depth, el });
+    return el;
+  }
+  // A heading in the lesson content starts a new collapsible group.
+  function contentGroups(blocks) {
+    const groups = [];
+    let cur = null;
+    for (const b of Array.isArray(blocks) ? blocks : []) {
+      if (b && b.type === 'heading') { cur = { title: String(b.text || ''), blocks: [] }; groups.push(cur); }
+      else { if (!cur) { cur = { title: null, blocks: [] }; groups.push(cur); } cur.blocks.push(b); }
+    }
+    let firstTitled = true;
+    return groups.map((g, i) => {
+      if (g.title == null) return renderBlocks(g.blocks);
+      const el = fold('grp-' + i, 'grp', h('h3', { class: 'grp-h' }, g.title), renderBlocks(g.blocks), { open: firstTitled, depth: 1, title: g.title });
+      firstTitled = false;
+      return el;
+    });
+  }
+
   /* ----- overview ----- */
   const overview = h('section', { class: 'card hero-card' },
     h('p', { class: 'mono ember' }, `Lesson ${asg.lesson_number || ''}${asg.lesson_date ? ' · ' + fmtDay(asg.lesson_date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : ''}`),
@@ -55,15 +87,18 @@ export async function lessonPage(sid, aid, focusExercise) {
     (lesson.key_concepts || []).length ? h('div', {}, h('p', { class: 'mono' }, 'Key concepts'), h('p', { class: 'chips-row' }, lesson.key_concepts.map((k) => chip(k)))) : null,
     (lesson.skills || []).length ? h('div', {}, h('p', { class: 'mono' }, 'Skills you are building'), h('p', { class: 'chips-row' }, lesson.skills.map((k) => chip(k)))) : null);
 
-  const content = (lesson.content || []).length ? h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Lesson'), renderBlocks(lesson.content)) : null;
+  const content = (lesson.content || []).length
+    ? fold('lesson', 'card', h('h2', { class: 'card-h' }, 'Lesson'), h('div', { class: 'blocks' }, contentGroups(lesson.content)), { title: 'Lesson' })
+    : null;
 
   const agenda = (lesson.agenda || []).length ? (() => {
     const total = lesson.agenda.reduce((n, r) => n + (+r.minutes || 0), 0);
-    return h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Lesson agenda'),
+    return fold('agenda', 'card', h('h2', { class: 'card-h' }, 'Lesson agenda'),
       h('table', { class: 'agenda' },
         h('thead', {}, h('tr', {}, h('th', { scope: 'col' }, 'Duration'), h('th', { scope: 'col' }, 'Activity'))),
         h('tbody', {}, lesson.agenda.map((r) => h('tr', {}, h('td', {}, (+r.minutes || 0) + ' min'), h('td', {}, String(r.activity || ''))))),
-        h('tfoot', {}, h('tr', {}, h('td', {}, total + ' min'), h('td', {}, 'Total')))));
+        h('tfoot', {}, h('tr', {}, h('td', {}, total + ' min'), h('td', {}, 'Total')))),
+      { title: 'Lesson agenda' });
   })() : null;
 
   /* ----- exercises ----- */
@@ -83,13 +118,14 @@ export async function lessonPage(sid, aid, focusExercise) {
         reload();
       } catch (err) { toast(err.message, 'error'); toggle.disabled = false; }
     });
-    return h('article', { class: 'ex' + (isDone ? ' is-done' : ''), id: 'ex-' + e.id },
-      h('header', { class: 'ex-head' },
+    const firstTodo = Math.max(exs.findIndex((x) => !done.has(x.id)), 0);
+    return fold('ex-' + e.id, 'ex' + (isDone ? ' is-done' : ''),
+      h('div', { class: 'ex-head' },
         h('span', { class: 'ex-n' }, String(i + 1)),
         h('div', {}, h('h3', { class: 'ex-t' }, e.title),
           h('p', { class: 'chips-row' }, isDone ? chip('Completed', 'good') : chip('Not completed yet'),
             e.requires_video ? chip('Video requested', 'warm') : null))),
-      meta.length ? h('p', { class: 'muted ex-meta' }, meta.join(' · ')) : null,
+      [meta.length ? h('p', { class: 'muted ex-meta' }, meta.join(' · ')) : null,
       e.instructions ? renderText(e.instructions) : null,
       e.tab ? h('figure', { class: 'tabfig' }, h('pre', { class: 'tab', tabindex: '0', 'aria-label': 'Guitar tablature' }, e.tab)) : null,
       (e.reference_links || []).length ? h('p', { class: 'refs' }, h('span', { class: 'mono' }, 'Reference '), (e.reference_links || []).map((l) => ext(l.url, l.label || l.url))) : null,
@@ -97,7 +133,8 @@ export async function lessonPage(sid, aid, focusExercise) {
       h('div', { class: 'vids' },
         h('h4', { class: 'vids-h' }, 'Practice videos'),
         mine.length ? mine.map((s) => submissionCard(s)) : h('p', { class: 'muted' }, teacher ? 'No videos submitted for this exercise.' : 'No videos yet.'),
-        !teacher ? uploader(e.id) : null));
+        !teacher ? uploader(e.id) : null)],
+      { open: i === firstTodo, depth: 1, title: (i + 1) + '. ' + e.title, domId: 'ex-' + e.id });
   }
 
   /* ----- submissions ----- */
@@ -212,17 +249,19 @@ export async function lessonPage(sid, aid, focusExercise) {
       h('p', { class: 'fine' }, `MP4 or MOV, up to ${MAX_VIDEO_MB} MB. Short clips of the exercise work best.`));
   }
 
-  const homework = exs.length ? h('section', { class: 'card', id: 'homework' },
+  const homework = exs.length ? fold('homework', 'card',
     h('div', { class: 'row-between' },
       h('h2', { class: 'card-h' }, 'Homework' + (asg.homework_start || asg.homework_due ? ' · ' + fmtRange(asg.homework_start, asg.homework_due) : '')),
       h('span', { class: 'muted' }, `${doneCount} of ${exs.length} completed`)),
-    (() => { const p = h('progress', { max: String(exs.length), value: String(doneCount), class: 'bar slim', 'aria-label': 'Exercises completed' }); return p; })(),
-    h('div', { class: 'ex-list' }, exCards)) : null;
+    [h('progress', { max: String(exs.length), value: String(doneCount), class: 'bar slim', 'aria-label': 'Exercises completed' }),
+      h('div', { class: 'ex-list' }, exCards)],
+    { title: 'Homework', domId: 'homework' }) : null;
 
   const generalSubs = subsFor(null);
-  const general = h('section', { class: 'card' }, h('h2', { class: 'card-h' }, 'Other videos for this lesson'),
-    generalSubs.length ? generalSubs.map((s) => submissionCard(s)) : h('p', { class: 'muted' }, 'Nothing here yet.'),
-    !teacher ? uploader(null) : null);
+  const general = fold('videos', 'card', h('h2', { class: 'card-h' }, 'Other videos for this lesson'),
+    [generalSubs.length ? generalSubs.map((s) => submissionCard(s)) : h('p', { class: 'muted' }, 'Nothing here yet.'),
+      !teacher ? uploader(null) : null],
+    { open: generalSubs.length > 0, title: 'Other videos' });
 
   /* ----- teacher tools ----- */
   let tools = null;
@@ -241,9 +280,8 @@ export async function lessonPage(sid, aid, focusExercise) {
       } catch (e) { toast(e.message, 'error'); save.disabled = false; }
     });
     const setStatus = (patch, okMsg) => async (ev) => { ev.target.disabled = true; try { await db.update('assignments', 'id=eq.' + enc(aid), patch); toast(okMsg); reload(); } catch (e) { toast(e.message, 'error'); ev.target.disabled = false; } };
-    tools = h('section', { class: 'card teacher-tools' },
-      h('h2', { class: 'card-h' }, 'Teacher tools'),
-      h('div', { class: 'row-actions' },
+    tools = fold('tools', 'card teacher-tools', h('h2', { class: 'card-h' }, 'Teacher tools'),
+      [h('div', { class: 'row-actions' },
         h('a', { class: 'btn', href: `#/s/${sid}/l/${aid}/edit` }, 'Edit lesson'),
         asg.status === 'published'
           ? h('button', { class: 'btn ghost', type: 'button', onclick: setStatus({ status: 'draft' }, 'Lesson hidden from the student.') }, 'Unpublish')
@@ -251,11 +289,58 @@ export async function lessonPage(sid, aid, focusExercise) {
         asg.completed_at
           ? h('button', { class: 'btn ghost', type: 'button', onclick: setStatus({ completed_at: null }, 'Lesson reopened.') }, 'Reopen lesson')
           : h('button', { class: 'btn ghost', type: 'button', onclick: setStatus({ completed_at: new Date().toISOString() }, 'Marked complete.') }, 'Mark lesson complete')),
-      h('div', {}, h('p', { class: 'mono' }, 'Private teacher notes'), box, h('div', { class: 'row-actions' }, save)));
+      h('div', {}, h('p', { class: 'mono' }, 'Private teacher notes'), box, h('div', { class: 'row-actions' }, save))],
+      { title: 'Teacher tools' });
   }
 
   const back = teacher ? h('a', { class: 'back', href: '#/s/' + sid }, '← ' + asg.students.full_name) : h('a', { class: 'back', href: '#/' }, '← My dashboard');
-  const page = h('div', { class: 'page narrow' }, back, overview, content, agenda, homework, general, tools);
-  if (focusExercise) setTimeout(() => { const el = document.getElementById('ex-' + focusExercise); if (el) el.scrollIntoView({ block: 'start' }); }, 80);
+  const menu = sectionMenu();
+  const page = h('div', { class: 'page narrow' }, back, overview, content, agenda, homework, general, tools, menu);
+  if (focusExercise) setTimeout(() => jumpTo(document.getElementById('ex-' + focusExercise)), 80);
   return page;
+
+  /* ----- the floating "Sections" menu ----- */
+  function jumpTo(el) {
+    if (!el) return;
+    for (let n = el.parentElement; n; n = n.parentElement) if (n.tagName === 'DETAILS') n.open = true;
+    if (el.tagName === 'DETAILS') el.open = true;
+    el.scrollIntoView({ block: 'start' });
+    const sum = el.querySelector && el.querySelector(':scope > summary');
+    if (sum) sum.focus({ preventScroll: true });
+  }
+  function sectionMenu() {
+    if (!sections.length) return null;
+    // Put the entries in the order they appear on the page.
+    sections.sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    const btn = h('button', { class: 'secnav-btn', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'secnav', 'aria-label': 'Open sections menu' },
+      h('span', { class: 'bars', 'aria-hidden': 'true' }, h('i'), h('i'), h('i')), h('span', { class: 'secnav-label' }, 'Sections'));
+    const panel = h('nav', { class: 'secnav', id: 'secnav', 'aria-label': 'Sections on this page', hidden: true });
+    const wrap = h('div', { class: 'secnav-wrap' }, panel, btn);
+    const set = (open) => {
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', String(open));
+      btn.setAttribute('aria-label', open ? 'Close sections menu' : 'Open sections menu');
+      btn.classList.toggle('is-open', open);
+    };
+    const setAll = (open) => document.querySelectorAll('main details.sec').forEach((d) => { d.open = open; });
+    const item = (label, depth, fn) => h('button', { class: 'secnav-item d' + depth, type: 'button', onclick: () => { set(false); fn(); } }, label);
+    panel.append(
+      item('Top of lesson', 0, () => { overview.scrollIntoView({ block: 'start' }); }),
+      ...sections.map((sec) => item(sec.title, sec.depth, () => jumpTo(sec.el))),
+      h('div', { class: 'secnav-tools' },
+        h('button', { class: 'linkish', type: 'button', onclick: () => setAll(true) }, 'Open all'),
+        h('button', { class: 'linkish', type: 'button', onclick: () => setAll(false) }, 'Close all')));
+    btn.addEventListener('click', () => set(panel.hidden));
+    const onDoc = (ev) => {
+      if (!wrap.isConnected) { document.removeEventListener('click', onDoc); document.removeEventListener('keydown', onKey); return; }
+      if (!panel.hidden && !wrap.contains(ev.target)) set(false);
+    };
+    const onKey = (ev) => {
+      if (!wrap.isConnected) { document.removeEventListener('click', onDoc); document.removeEventListener('keydown', onKey); return; }
+      if (ev.key === 'Escape' && !panel.hidden) { set(false); btn.focus(); }
+    };
+    document.addEventListener('click', onDoc);
+    document.addEventListener('keydown', onKey);
+    return wrap;
+  }
 }
